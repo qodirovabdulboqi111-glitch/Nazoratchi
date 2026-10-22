@@ -19,7 +19,7 @@ def run():
 
 # --- SOZLAMALAR ---
 # Telegram bot tokenini qo'shtirnoq ichiga yozing:
-API_TOKEN ='8868205892:AAEcENkgVgajTo7oVgXq1b4lv81MVpA6OwY'
+API_TOKEN ='8868205892:AAEirz_u678yv93BwtnpccoElR6CfT48ibk'
 
 # Groq API kalitini qo'shtirnoq ichiga yozing:
 GROQ_API_KEY = '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'
