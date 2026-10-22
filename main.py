@@ -3,7 +3,7 @@ from flask import Flask, request
 import telebot
 
 # 1. Bot tokenini va Render havolasini sozlash
-TOKEN = "8868205892:AAEcENkgVgajTo7oVgXq1b4lv81MVpA6OwY"
+TOKEN = "8868205892:AAFIcqSfrTTv2iCN6ElJTl6DE760BIg0XVU"
 # Bu yerga Render taqdim etgan o'z havolangizni yozing (oxirida / bo'lmasin)
 WEBHOOK_URL = "https://onrender.com" 
 
