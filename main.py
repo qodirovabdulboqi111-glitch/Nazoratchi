@@ -17,7 +17,7 @@ def run():
     app.run(host='0.0.0.0', port=port)
 
 # --- 100% TAYYOR SOZLAMALAR (KALITLAR) ---
-API_TOKEN = '8868205892:AAEirz_u678yv93BwtnpccoElR6CfT48ibk'
+API_TOKEN = '8868205892:AAFIcqSfrTTv2iCN6ElJTl6DE760BIg0XVU'
 GROQ_API_KEY = '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'
 
 # --- TAQIQLANGAN SO'Z BIRIKMALARI ---
@@ -35,7 +35,6 @@ groq_client = Groq(api_key=GROQ_API_KEY)
 @bot.message_handler(content_types=['voice'])
 def handle_voice(message):
     try:
-        # Ovozli xabarni yuklab olish
         file_info = bot.get_file(message.voice.file_id)
         file_url = f"https://telegram.org{API_TOKEN}/{file_info.file_path}"
         voice_bytes = requests.get(file_url).content
@@ -44,7 +43,6 @@ def handle_voice(message):
         with open(ogg_filename, "wb") as f:
             f.write(voice_bytes)
 
-        # Groq Whisper SI orqali ovozni matnga o'girish
         with open(ogg_filename, "rb") as audio_file:
             transcription = groq_client.audio.transcriptions.create(
                 file=(ogg_filename, audio_file.read()),
@@ -54,14 +52,12 @@ def handle_voice(message):
         
         matn = transcription.text.lower()
         
-        # Taqiqlangan so'zlarni qidirish
         o_chirish_kerak = False
         for birikma in TAQIQLANGAN_BIRIKMALAR:
             if birikma in matn:
                 o_chirish_kerak = True
                 break
         
-        # Agar taqiqlangan so'zlar bo'lsa, xabarni o'chirish
         if o_chirish_kerak:
             bot.delete_message(message.chat.id, message.message_id)
             
@@ -74,10 +70,7 @@ def handle_voice(message):
             os.remove(ogg_filename)
 
 if __name__ == "__main__":
-    # Veb serverni alohida oqimda yoqish
     server_thread = Thread(target=run)
     server_thread.start()
-    
     print("Bot muvaffaqiyatli ishga tushdi...")
     bot.polling(none_stop=True)
-                
