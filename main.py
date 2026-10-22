@@ -19,10 +19,10 @@ def run():
 
 # --- SOZLAMALAR ---
 # Telegram bot tokenini qo'shtirnoq ichiga yozing:
-API_TOKEN = 'TELEGRAM_BOT_TOKEN_SHU_YERGA_YOZING'
+API_TOKEN ='8868205892:AAEcENkgVgajTo7oVgXq1b4lv81MVpA6OwY'
 
 # Groq API kalitini qo'shtirnoq ichiga yozing:
-GROQ_API_KEY = 'GROQ_API_KEY_SHU_YERGA_YOZING'
+GROQ_API_KEY = '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'
 
 # --- TAQIQLANGAN SO'Z BIRIKMALARI ---
 TAQIQLANGAN_BIRIKMALAR = [
@@ -92,3 +92,4 @@ if __name__ == "__main__":
     
     print("Bot muvaffaqiyatli ishga tushdi...")
     bot.polling(none_stop=True)
+        
