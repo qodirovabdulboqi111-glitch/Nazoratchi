@@ -1,81 +1,57 @@
-import telebot
-import requests
 import os
-from groq import Groq
-from flask import Flask
-from threading import Thread
-import time
+from flask import Flask, request
+import telebot
 
-# --- RENDER VEB SERVER ---
-app = Flask('')
+# 1. Bot tokenini va Render havolasini sozlash
+TOKEN = "8868205892:AAEcENkgVgajTo7oVgXq1b4lv81MVpA6OwY"
+# Bu yerga Render taqdim etgan o'z havolangizni yozing (oxirida / bo'lmasin)
+WEBHOOK_URL = "https://onrender.com" 
 
-@app.route('/')
-def home():
-    return "Bot faol!"
+bot = telebot.TeleBot(TOKEN, threaded=False) # Conflict oldini olish uchun threaded=False qilamiz
+app = Flask(__name__)
 
-def run_server():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port)
+# 2. Xabarlarni qabul qiluvchi guruh ID raqami (o'zingiz ochgan guruh)
+# Guruh ID raqamini aniqlab, manfiy son ko'rinishida yozing (Masalan: -100123456789)
+MY_GROUP_ID = -1002222222222 
 
-# --- KALITLAR (SIZNING ASLIY KALITLARINGIZ) ---
-API_TOKEN = '8868205892:AAFIcqSfrTTv2iCN6ElJTl6DE760BIg0XVU'
-GROQ_API_KEY = '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'
+# 3. Webhook manzili (Telegram so'rovlarini qabul qilish uchun)
+@app.route('/' + TOKEN, methods=['POST'])
+def getMessage():
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_updates([update])
+    return "!", 200
 
-# --- TAQIQLANGAN SO'ZLAR RO'YHATLI ---
-TAQIQLANGAN_SOZLAR = ["kam", "pustoy", "bo'sh", "bosh", "pochta", "olamiz"]
+@app.route("/")
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url=WEBHOOK_URL + '/' + TOKEN)
+    return "Bot muvaffaqiyatli ishlamoqda!", 200
 
-bot = telebot.TeleBot(API_TOKEN)
-groq_client = Groq(api_key=GROQ_API_KEY)
+# =========================================================
+# 4. XABARLARNI TORTISH VA YO'NALTIRISH MANTIQI
+# =========================================================
 
-@bot.message_handler(content_types=['voice'])
-def handle_voice(message):
+# Barcha turdagi xabarlarni (matn, rasm, video, audio) kuzatish
+@bot.message_handler(content_types=['text', 'photo', 'video', 'document', 'audio', 'voice'])
+def forward_messages(message):
     try:
-        file_info = bot.get_file(message.voice.file_id)
-        file_url = f"https://telegram.org{API_TOKEN}/{file_info.file_path}"
-        voice_bytes = requests.get(file_url).content
+        # AGAR XABAR SIZ KUZATAYOTGAN GURUHDA BO'LSA
+        # (Bu yerda message.chat.id orqali kelayotgan guruhni ajratib olasiz)
         
-        ogg_filename = f"voice_{message.message_id}_{int(time.time())}.ogg"
-        with open(ogg_filename, "wb") as f:
-            f.write(voice_bytes)
-
-        with open(ogg_filename, "rb") as audio_file:
-            transcription = groq_client.audio.transcriptions.create(
-                file=(ogg_filename, audio_file.read()),
-                model="whisper-large-v3",
-                language="uz"
-            )
-        
-        matn = transcription.text.lower()
-        print(f"ESHITILGAN OVOZ MATNI: {matn}") # Endi bu yozuv aniq Render logida chiqadi
-        
-        o_chirish_kerak = False
-        for soz in TAQIQLANGAN_SOZLAR:
-            if soz in matn:
-                o_chirish_kerak = True
-                break
-        
-        if o_chirish_kerak:
-            bot.delete_message(message.chat.id, message.message_id)
-            print("Taqiqlangan so'z topildi va ovoz o'chirildi!")
-            
-        if os.path.exists(ogg_filename):
-            os.remove(ogg_filename)
-
+        # O'zingiz ochgan guruhga xabarni chiroyli nusxalash (reklamasiz)
+        bot.copy_message(
+            chat_id=MY_GROUP_ID,          # Qayerga boradi
+            from_chat_id=message.chat.id,  # Qaysi guruhdan keldi
+            message_id=message.message_id  # Xabar ID-si
+        )
     except Exception as e:
         print(f"Xatolik yuz berdi: {e}")
-        if 'ogg_filename' in locals() and os.path.exists(ogg_filename):
-            os.remove(ogg_filename)
 
-# --- ASOSIY ISHGA TUSHIRISH TIZIMI ---
+# =========================================================
+
 if __name__ == "__main__":
-    # Veb serverni birinchi parallel oqimda yoqamiz
-    t = Thread(target=run_server)
-    t.daemon = True
-    t.start()
-    
-    print("Veb server port ochdi...")
-    print("Telegram bot xabarlarni tinglashni boshlamoqda...")
-    
-    # Bot pollingni asosiy oqimda silliq yoqamiz
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    # Render avtomatik ravishda PORT muhitini beradi, bo'lmasa 10000 portda ishlaydi
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
     
