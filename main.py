@@ -2,13 +2,27 @@ import telebot
 import requests
 import os
 from groq import Groq
+from flask import Flask
+from threading import Thread
+
+# --- RENDER UCHUN VEB SERVER (PORT OCHISH) ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot ishlamoqda!"
+
+def run():
+    # Render avtomatik taqdim etadigan portni oladi, bo'lmasa 8080 ishlatadi
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
 
 # --- SOZLAMALAR ---
-# 1. Telegram bot tokenini qo'shtirnoq ichiga yozing:
-API_TOKEN = '8868205892:AAEcENkgVgajTo7oVgXq1b4lv81MVpA6OwY'
+# Telegram bot tokenini qo'shtirnoq ichiga yozing:
+API_TOKEN = 'TELEGRAM_BOT_TOKEN_SHU_YERGA_YOZING'
 
-# 2. Groq API kalitini qo'shtirnoq ichiga yozing:
-GROQ_API_KEY = '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'
+# Groq API kalitini qo'shtirnoq ichiga yozing:
+GROQ_API_KEY = 'GROQ_API_KEY_SHU_YERGA_YOZING'
 
 # --- TAQIQLANGAN SO'Z BIRIKMALARI ---
 TAQIQLANGAN_BIRIKMALAR = [
@@ -16,13 +30,13 @@ TAQIQLANGAN_BIRIKMALAR = [
     "uchta kam", 
     "ikkita kam", 
     "bitta kam",
-    "pustoymiz", "ertaga olamiz", 
+    "pustoymiz", "pustoy", 
     "bo'shadik", "boshadik",
-    "ikkita odam olamiz", "ikkita odam olamiz",
+    "ikkita odam olamiz",
     "to'rtta odam olamiz", "tortta odam olamiz",
     "uchta odam olamiz", 
     "bitta odam olamiz",
-    "odam pochta olamiz", "odam pochta", "pochta olamiz", "odam pochta olamiz"
+    "odam pochta olamiz", "odam pochta", "pochta olamiz"
 ]
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -40,7 +54,7 @@ def handle_voice(message):
         with open(ogg_filename, "wb") as f:
             f.write(voice_bytes)
 
-        # Groq API orqali ovozni matnga o'girish (O'zbek tili uchun Whisper moduli)
+        # Groq API orqali ovozni matnga o'girish
         with open(ogg_filename, "rb") as audio_file:
             transcription = groq_client.audio.transcriptions.create(
                 file=(ogg_filename, audio_file.read()),
@@ -54,6 +68,7 @@ def handle_voice(message):
         o_chirish_kerak = False
         for birikma in TAQIQLANGAN_BIRIKMALAR:
             if birikma in matn:
+                o_chirish_recak = True
                 o_chirish_kerak = True
                 break
         
@@ -61,7 +76,6 @@ def handle_voice(message):
         if o_chirish_kerak:
             bot.delete_message(message.chat.id, message.message_id)
             
-        # Vaqtinchalik faylni o'chirish
         if os.path.exists(ogg_filename):
             os.remove(ogg_filename)
 
@@ -71,6 +85,10 @@ def handle_voice(message):
             os.remove(ogg_filename)
 
 if __name__ == "__main__":
+    print("Veb server ishga tushmoqda...")
+    # Veb serverni alohida oqimda yoqamiz (Render talabi)
+    server_thread = Thread(target=run)
+    server_thread.start()
+    
     print("Bot muvaffaqiyatli ishga tushdi...")
     bot.polling(none_stop=True)
-    
